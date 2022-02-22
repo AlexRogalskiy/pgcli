@@ -79,9 +79,9 @@ except ImportError:
     from urllib.parse import urlparse, unquote, parse_qs
 
 from getpass import getuser
-from psycopg2 import OperationalError, InterfaceError
-from psycopg2.extensions import make_dsn, parse_dsn
-import psycopg2
+from psycopg import OperationalError, InterfaceError
+from psycopg.conninfo import make_conninfo, conninfo_to_dict
+import psycopg
 
 from collections import namedtuple
 
@@ -530,7 +530,7 @@ class PGCli:
         )
 
     def connect_uri(self, uri):
-        kwargs = psycopg2.extensions.parse_dsn(uri)
+        kwargs = psycopg.extensions.parse_dsn(uri)
         remap = {"dbname": "database", "password": "passwd"}
         kwargs = {remap.get(k, k): v for k, v in kwargs.items()}
         self.connect(**kwargs)
