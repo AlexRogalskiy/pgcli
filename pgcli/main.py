@@ -79,9 +79,9 @@ except ImportError:
     from urllib.parse import urlparse, unquote, parse_qs
 
 from getpass import getuser
+# pg3: https://www.psycopg.org/psycopg3/docs/api/conninfo.html
 from psycopg import OperationalError, InterfaceError
 from psycopg.conninfo import make_conninfo, conninfo_to_dict
-import psycopg
 
 from collections import namedtuple
 
@@ -530,7 +530,7 @@ class PGCli:
         )
 
     def connect_uri(self, uri):
-        kwargs = psycopg.extensions.parse_dsn(uri)
+        kwargs = conninfo_to_dict(uri)
         remap = {"dbname": "database", "password": "passwd"}
         kwargs = {remap.get(k, k): v for k, v in kwargs.items()}
         self.connect(**kwargs)
@@ -601,7 +601,7 @@ class PGCli:
             return False
 
         if dsn:
-            parsed_dsn = parse_dsn(dsn)
+            parsed_dsn = conninfo_to_dict(dsn)
             if "host" in parsed_dsn:
                 host = parsed_dsn["host"]
             if "port" in parsed_dsn:
@@ -648,7 +648,7 @@ class PGCli:
             port = self.ssh_tunnel.local_bind_ports[0]
 
             if dsn:
-                dsn = make_dsn(dsn, host=host, port=port)
+                dsn = make_conninfo(dsn, host=host, port=port)
 
         # Attempt to connect to the database.
         # Note that passwd may be empty on the first attempt. If connection
@@ -1580,12 +1580,15 @@ def format_output(title, cur, headers, status, settings):
         if hasattr(cur, "description"):
             column_types = []
             for d in cur.description:
+                # pg3: type_name = cur.adapters.types[d.type_code].name
                 if (
+                    # pg3: type_name in ("numeric", "float4", "float8")
                     d[1] in psycopg2.extensions.DECIMAL.values
                     or d[1] in psycopg2.extensions.FLOAT.values
                 ):
                     column_types.append(float)
                 if (
+                    # pg3: type_name in ("int2", "int4", "int8")
                     d[1] == psycopg2.extensions.INTEGER.values
                     or d[1] in psycopg2.extensions.LONGINTEGER.values
                 ):
