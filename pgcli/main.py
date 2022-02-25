@@ -5,7 +5,7 @@ from configobj import ConfigObj, ParseError
 from pgspecial.namedqueries import NamedQueries
 from .config import skip_initial_comment
 
-warnings.filterwarnings("ignore", category=UserWarning, module="psycopg2")
+warnings.filterwarnings("ignore", category=UserWarning, module="psycopg")
 
 import atexit
 import os
@@ -79,6 +79,7 @@ except ImportError:
     from urllib.parse import urlparse, unquote, parse_qs
 
 from getpass import getuser
+
 # pg3: https://www.psycopg.org/psycopg3/docs/api/conninfo.html
 from psycopg import OperationalError, InterfaceError
 from psycopg.conninfo import make_conninfo, conninfo_to_dict
@@ -1580,18 +1581,10 @@ def format_output(title, cur, headers, status, settings):
         if hasattr(cur, "description"):
             column_types = []
             for d in cur.description:
-                # pg3: type_name = cur.adapters.types[d.type_code].name
-                if (
-                    # pg3: type_name in ("numeric", "float4", "float8")
-                    d[1] in psycopg2.extensions.DECIMAL.values
-                    or d[1] in psycopg2.extensions.FLOAT.values
-                ):
+                type_name = cur.adapters.types[d.type_code].name
+                if type_name in ("numeric", "float4", "float8"):
                     column_types.append(float)
-                if (
-                    # pg3: type_name in ("int2", "int4", "int8")
-                    d[1] == psycopg2.extensions.INTEGER.values
-                    or d[1] in psycopg2.extensions.LONGINTEGER.values
-                ):
+                if type_name in ("int2", "int4", "int8"):
                     column_types.append(int)
                 else:
                     column_types.append(str)
